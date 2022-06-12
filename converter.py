@@ -49,9 +49,7 @@ counter = 0
 for column2 in specrot:
     lst = []
     notenum = 0
-    flist = []
     tempvol = 0
-    optTest = []
     for value2 in column2:
         note = getkey(f[notenum])
         if note > 127: break
