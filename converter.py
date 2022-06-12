@@ -113,3 +113,4 @@ for column in specrot2:
     counter += 1
 
 midi.save(file + ".mid")# + " opt " + str(res) + "2.mid")
+print()
