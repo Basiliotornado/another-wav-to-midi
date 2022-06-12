@@ -9,8 +9,8 @@ uses command line arguments
 -d Increases notes per second with higher numbers. range 0.01 to 0.99
 
 -f File name
-
-
-
-
+ 
+ 
+ 
+ 
 requires: scipy, numpy, mido
