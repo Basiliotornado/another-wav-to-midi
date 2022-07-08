@@ -81,8 +81,7 @@ for i in range(len(specrot2)):
     olditem = 0
     tempspec.append({})
     for key,item in specrot2[i].items():
-        if key != key-1:
-            interpolate(tempspec[i],oldkey,olditem,key,item)
+        interpolate(tempspec[i],oldkey,olditem,key,item)
         tempspec[i][key] = item
         oldkey = key
         olditem = item
