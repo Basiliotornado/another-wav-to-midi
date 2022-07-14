@@ -1,12 +1,12 @@
 from scipy.signal import spectrogram, get_window
 from scipy.io.wavfile import read
-from numpy import rot90, flipud, log2, log, append
+from numpy import rot90, flipud, log2
 import mido
 import argparse
 
 def getkey(freq):
     if freq <= 0: return 0
-    return int(12 * log2(freq / 440) + 69)
+    return round(12 * log2(freq / 440) + 69)
     
 def interpolate(dct,x1,y1,x2,y2):
     tempindicies = list(range(x1+1,x2))
@@ -63,10 +63,10 @@ for column2 in specrot:
         notenum += 1
         if note < 0: continue
         if note != getkey(f[notenum]): 
-            lst[note] = value2+tempvol
+            lst[note] = (value2+tempvol)**0.6
             tempvol = 0
         else:
-            tempvol = (tempvol+value2)*0.85
+            tempvol = (tempvol+value2)*0.80
         
     specrot2.append(lst)
     
@@ -106,8 +106,9 @@ for column in specrot2:
     dif1 += timestop*1000
     dif2 += wait
     for note,value in column.items():
-        c = int((value/large)*127)
-        track = int(log(c+1)*2)
+        c = int((value/large)*127)-2
+        if c<0: c=0
+        track = int(log2(c+1))
         if track > 6: track = 6
         midi.tracks[track].append(mido.Message('note_on', note=int(note), velocity=c))
         note_list.append([note, track])
