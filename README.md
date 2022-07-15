@@ -11,6 +11,7 @@ uses command line arguments
 -f File name
  
  
+demonstration: https://www.youtube.com/watch?v=lszwyqfOcMI
  
  
 requires: scipy, numpy, mido
