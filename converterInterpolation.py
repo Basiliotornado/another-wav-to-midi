@@ -107,7 +107,7 @@ for column in specrot2:
     dif2 += wait
     for note,value in column.items():
         c = int((value/large)*127)-2
-        if c<0: c=0
+        if c<0: continue
         track = int(log2(c+1))
         if track > 6: track = 6
         midi.tracks[track].append(mido.Message('note_on', note=int(note), velocity=c))
@@ -117,7 +117,7 @@ for column in specrot2:
 
     for track in midi.tracks:
         track.append(mido.Message('note_off', note=note_list[0][0], time = wait))
-        note_list = note_list[1:]
+    note_list = note_list[1:]
     for play in note_list:
         midi.tracks[play[1]].append(mido.Message('note_off', note=play[0]))
     print(round(counter/length,2), end = "\r") #how do i make it not put 1.09 lol
