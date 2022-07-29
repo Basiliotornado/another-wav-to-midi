@@ -15,7 +15,6 @@ def interpolate(dct,x1,y1,x2,y2):
     
 res = 4096
 div = 0.8
-mono = False
 
 parser = argparse.ArgumentParser(description='Generate a MIDI file from WAV')
 
@@ -25,8 +24,6 @@ parser.add_argument("-d", type=float,
                     help="Increases notes per second with higher numbers. range 0.01 to 0.99")
 parser.add_argument("-f", type=str,
                     help="File name ")
-parser.add_argument("-m", type=None,
-                    help="mono")
 
 args = parser.parse_args()
 
@@ -34,16 +31,12 @@ if args.r: res = args.r
 if args.d: div = args.d
 if args.f: file = args.f
 else: file = input("File name: ")
-if args.m: mono = True
 # im not sure what im doing
 
 samplerate, data = read(file + ".wav")
 
-print("\n\nStereo > mono (slow)\n--------------")
-
-if not mono:
-    data2 = data[:,1]
-    data = data[:,0]
+data2 = data[:,1]
+data = data[:,0]
 
 f, t, spectro = spectrogram(data, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*div), mode='magnitude')
 _,_, spectro2 = spectrogram(data2, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*div), mode='magnitude')
@@ -93,29 +86,7 @@ t1.start()
 t2.start()
 t1.join()
 t2.join()
-"""reduce(specrot, specrot02)
-print()
-reduce(specrot2, specrot22)"""
-"""for column2 in specrot2:
-    lst = {}
-    notenum = 0
-    tempvol = 0
-    for value2 in column2:
-        note = getkey(f[notenum])
-        if note > 127: break
-        notenum += 1
-        if note < 0: continue
-        if note != getkey(f[notenum]): 
-            lst[note] = (value2+tempvol) ** 0.55
-            tempvol = 0
-        else:
-            tempvol = (tempvol+value2)*0.80
-        
-    specrot22.append(lst)
-    
-    print(round(counter/length,3), end = "\r")
-    counter += 1
-"""
+
 large = 0
 for column in specrot02:
     if max(column.values()) > large:
