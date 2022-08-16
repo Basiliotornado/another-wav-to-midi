@@ -114,14 +114,13 @@ specrot02 = interpolate2(specrot02, length)
 specrot22 = interpolate2(specrot22, length)
 
 length = len(specrot02)
-dif1, dif2, counter = 0, 0, 0
+timer, counter = 0, 0
 
 print("\n\nPlacing notes\n--------------")
 for column in range(length):
     note_list = [[0,0,0]]
-    wait = int(dif1-dif2)
-    dif1 += timestop*1000
-    dif2 += wait
+    wait = int(t[column]*1000 - timer)
+    timer += wait
     notenum = 0
     for note,value in specrot02[column].items():
         c = int((value/large)*129)-2
