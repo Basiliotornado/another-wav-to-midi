@@ -1,6 +1,6 @@
 from scipy.signal import spectrogram, get_window
 from scipy.io.wavfile import read
-from numpy import rot90, flipud, log2, asarray, average
+from numpy import rot90, flipud, log2
 import mido
 import argparse
 import threading
