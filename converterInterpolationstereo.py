@@ -69,7 +69,7 @@ def reduce(input, out):
             notenum += 1
             if note < 0: continue
             if note != getkey(f[notenum]): 
-                lst[note] = (value2+tempvol) ** 0.55
+                lst[note] = (value2+tempvol) ** 0.5
                 tempvol = 0
             else:
                 tempvol = (tempvol+value2)*0.80
