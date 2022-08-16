@@ -2,6 +2,8 @@
 
 Welcome to my program :)
 
+basically requires the soundfont to be used
+
 uses command line arguments
 
 -r Size of data chunks given to the spectrogram. Generally increases note count for small gain in lower notes, will increase processing time
