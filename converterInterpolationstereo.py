@@ -47,7 +47,6 @@ timestop = t[1]-t[0]
 
 length = len(specrot)
 
-
 midi = mido.MidiFile(type = 1)
 for i in range(7):
     midi.tracks.append(mido.MidiTrack())
@@ -96,33 +95,23 @@ for column in specrot22:
         large = max(column.values())
 
 length = len(specrot02)
+
 print("\n\nInterpolating\n--------------")
-tempspec = []
-for i in range(length):
-    oldkey = 0
-    olditem = 0
-    tempspec.append({})
-    for key,item in specrot02[i].items():
-        interpolate(tempspec[i],oldkey,olditem,key,item)
-        tempspec[i][key] = item
-        oldkey = key
-        olditem = item
-    print(round(i/length,2), end = "\r") #how do i make it not put 1.09 lol
-specrot02 = tempspec
-print()
-tempspec = []
-for i in range(length):
-    oldkey = 0
-    olditem = 0
-    tempspec.append({})
-    for key,item in specrot22[i].items():
-        interpolate(tempspec[i],oldkey,olditem,key,item)
-        tempspec[i][key] = item
-        oldkey = key
-        olditem = item
-    print(round(i/length,2), end = "\r") #how do i make it not put 1.09 lol
-specrot22 = tempspec
-del tempspec
+def interpolate2(list, length):
+    tempspec = []
+    for i in range(length):
+        oldkey = 0
+        olditem = 0
+        tempspec.append({})
+        for key,item in list[i].items():
+            interpolate(tempspec[i],oldkey,olditem,key,item)
+            tempspec[i][key] = item
+            oldkey = key
+            olditem = item
+        print(round(i/length,2), end = "\r") #how do i make it not put 1.09 lol
+    return tempspec
+specrot02 = interpolate2(specrot02, length)
+specrot22 = interpolate2(specrot22, length)
 
 length = len(specrot02)
 dif1, dif2, counter = 0, 0, 0
