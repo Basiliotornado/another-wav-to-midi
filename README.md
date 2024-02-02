@@ -4,7 +4,7 @@ Welcome to my program :)
 
 basically requires the soundfont to be used
 
-uses command line arguments
+ command line arguments:
 
 -r Size of data chunks given to the spectrogram. Generally increases note count for small gain in lower notes, will increase processing time
 
@@ -16,4 +16,4 @@ uses command line arguments
 demonstration: https://www.youtube.com/watch?v=lszwyqfOcMI
  
  
-requires: scipy, numpy, mido
+requires: scipy, numpy, mido, tqdm
