@@ -121,8 +121,8 @@ def interpolate2(list, length):
             olditem = item
     return tempspec
 
-#specrot02 = interpolate2(specrot02, length)
-#specrot22 = interpolate2(specrot22, length)
+specrot02 = interpolate2(specrot02, length)
+specrot22 = interpolate2(specrot22, length)
 print()
 
 length = len(specrot02)
