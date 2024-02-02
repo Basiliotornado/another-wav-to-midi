@@ -157,5 +157,5 @@ for column in tqdm(range(length), desc = "Writing midi"):
     wait = int(t[column]*1000 - timer)
     timer += wait
 print("\n\nExporting")
-midi.save(file_name + "1_stereo.mid")
+midi.save(file_name + "_stereo.mid")
 print("\n\nDone!")
