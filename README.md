@@ -2,6 +2,8 @@
 
 Welcome to my program :)
 
-basically requires the soundfont to be used
+Basically requires the soundfont to be used
+
+Tuned for fluidsynth with chorus and reverb off. (if that changes anything?)
  
-demonstration: https://youtu.be/sd0vAzpcplY
+Demonstration: https://youtu.be/sd0vAzpcplY
