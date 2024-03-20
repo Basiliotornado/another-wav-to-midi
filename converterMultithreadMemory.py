@@ -161,15 +161,15 @@ for column in tqdm(range(length), desc = "Writing midi"):
     note_list = [[0,0,0]]
     notenum = 0
     for note,value in specrot02[column].items():
-        vel = int((value/large)*129)-2
-        if vel<=0: continue #vel=0
+        vel = int((value/large)*127)
+        if vel<=1: continue #vel=0
         midi.tracks[0].append(mido.Message('note_on', channel = 0, note=int(note), velocity=vel))
         note_list.append([note, 0, 0])
         notenum += 1
 
     notenum = 0
     for note,value in specrot22[column].items():
-        vel = int((value/large)*129)-2
+        vel = int((value/large)*127)
         if vel<=0: continue #vel=0
         track = int(vel/(96/channels) + 1) #int(vel/16+1)
         #track = int(log2(vel/5+1))
