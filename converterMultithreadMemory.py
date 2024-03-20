@@ -6,6 +6,7 @@ import argparse
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 from subprocess import run
+from sys import platform
 
 parser = argparse.ArgumentParser(description='Generate a MIDI file from WAV')
 
