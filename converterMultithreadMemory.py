@@ -170,7 +170,7 @@ for column in tqdm(range(length), desc = "Writing midi"):
     notenum = 0
     for note,value in specrot22[column].items():
         vel = int((value/large)*127)
-        if vel<=0: continue #vel=0
+        if vel<=1: continue #vel=0
         track = int(vel/(96/channels) + 1) #int(vel/16+1)
         #track = int(log2(vel/5+1))
         if track > channels-1: track = channels-1 # if track > 5: track = 5
