@@ -109,10 +109,15 @@ def red(column2):
 def reduceMulti(input):
     out = []
 
-    with Pool(cpu_count()//2) as p:
-        for result in tqdm(p.imap(red, input), desc = "Merging", total = len(input)):
-           out.append(result)
-
+    if platform.startswith('linux'):
+        with Pool(cpu_count()//2) as p:
+            for result in tqdm(p.imap(red, input), desc = "Merging", total = len(input)):
+                out.append(result)
+    else:
+        print("Multithreading is broken in windows! Please help troubleshoot!")
+        for result in tqdm(map(red, input), desc = "Merging", total = len(input)):
+            out.append(result)
+  
     return out
 
 specrot02 = reduceMulti(specrot)
