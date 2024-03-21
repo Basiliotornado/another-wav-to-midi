@@ -40,7 +40,7 @@ res = args.r
 channels = args.c
 overlap = args.o
 do_interpolation = False if args.i == None else True
-mono = False if args.i == None else True
+mono = False if args.m == None else True
 
 if args.file: file = args.file
 else: file = input("File name: ")
