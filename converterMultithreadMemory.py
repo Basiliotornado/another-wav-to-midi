@@ -181,24 +181,32 @@ for column in tqdm(range(length), desc = "Writing midi"):
     timer += wait
     note_list = [[0,0,0]]
     notenum = 0
-    for note,value in specrot02[column].items():
-        vel = int((value/large)*127)
-        if vel<=1: continue #vel=0
-        midi.tracks[0].append(mido.Message('note_on', channel = 0, note=int(note), velocity=vel))
-        note_list.append([note, 0, 0])
-        notenum += 1
-        
     if not mono:
         notenum = 0
         for note,value in specrot22[column].items():
+
             vel = int((value/large)*127)
-            if vel<=1: continue #vel=0
-            track = int(vel/(96/channels) + 1) #int(vel/16+1)
-            #track = int(log2(vel/5+1))
-            if track > channels-1: track = channels-1 # if track > 5: track = 5
-            midi.tracks[track].append(mido.Message('note_on', channel = 1, note=int(note), velocity=vel))
-            note_list.append([note, track, 1])
+            if vel<=1: continue
+
+            midi.tracks[0].append(mido.Message('note_on', channel = 1, note=int(note), velocity=vel))
+
+            note_list.append([note, 0, 1])
+
             notenum += 1
+
+    for note,value in specrot02[column].items():
+        
+        vel = int((value/large)*127)
+        if vel<=1: continue
+
+        track = int(vel/(96/channels) + 1)
+        if track > channels-1: track = channels-1
+
+        midi.tracks[track].append(mido.Message('note_on', channel = 0, note=int(note), velocity=vel))
+
+        note_list.append([note, track, 0])
+
+        notenum += 1
 
     for track in midi.tracks:
         track.append(mido.Message('note_off', channel = note_list[0][2], note=note_list[0][0], time = wait))
