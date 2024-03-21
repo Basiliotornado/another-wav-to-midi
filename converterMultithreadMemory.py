@@ -10,9 +10,12 @@ from sys import platform
 
 parser = argparse.ArgumentParser(description='Generate a MIDI file from WAV')
 
+parser.add_argument("file",
+                    type=str,
+                    help="File name.")
 parser.add_argument("-r",
                     type=int,
-                    help="Fft bin size. Generally increases note count for small gain in lower notes, will increase processing time",
+                    help="Fft bin size. Generally increases note count for small gain in lower notes, will increase processing time.",
                     default=4096)
 parser.add_argument("-c",
                     type=int,
@@ -20,19 +23,26 @@ parser.add_argument("-c",
                     default=32)
 parser.add_argument("-o",
                     type=float,
-                    help="Overlap between fft bins. Increases notes per second with higher numbers. range 0.01 to 0.99",
+                    help="Overlap between fft bins. Increases notes per second with higher numbers. range 0.0 to 0.99.",
                     default=0.75)
 parser.add_argument("-i",
-                    type=str,
-                    help="File name.")
+                    action='store', 
+                    nargs='*',
+                    help="Interpolate missing notes.")
+parser.add_argument("-m",
+                    action='store', 
+                    nargs='*',
+                    help="If the input file is mono enable this flag.")
 
 args = parser.parse_args()
 
 res = args.r
 channels = args.c
 overlap = args.o
+do_interpolation = False if args.i == None else True
+mono = False if args.i == None else True
 
-if args.i: file = args.i
+if args.file: file = args.file
 else: file = input("File name: ")
 # im not sure what im doing
 
@@ -60,9 +70,10 @@ data2 = data[:,1]
 data = data[:,0]
 
 f, t, spectro = spectrogram(data, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
-_,_, spectro2 = spectrogram(data2, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
 specrot = flipud(rot90(spectro))
-specrot2 = flipud(rot90(spectro2))
+if not mono:
+    _,_, spectro2 = spectrogram(data2, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
+    specrot2 = flipud(rot90(spectro2))
 length = len(specrot)
 
 keyFreq = {}
@@ -79,18 +90,6 @@ def interpolate(dct,x1,y1,x2,y2):
     for i in tempindicies:
         dct[i] = y1 + (i-x1) * ((y2-y1)/(x2-x1))
 
-
-
-midi = mido.MidiFile(type = 1)
-
-midi.ticks_per_beat = 5000
-
-for i in range(channels):
-    midi.tracks.append(mido.MidiTrack())
-
-midi.tracks[0].append(mido.Message('control_change', channel = 0, control = 10, value = 0))
-midi.tracks[0].append(mido.Message('control_change', channel = 1, control = 10, value = 127))
-
 def red(column2):
     lst = {}
     notenum = 0
@@ -101,7 +100,7 @@ def red(column2):
         notenum += 1
         if note < 0: continue
         if note != getkey(f[notenum]):
-            lst[note] = (value + tempvol) ** 0.25
+            lst[note] = ((value + tempvol)) ** 0.25
             tempvol = 0
         else:
             tempvol = (tempvol + value) * 0.8
@@ -112,26 +111,35 @@ def reduceMulti(input):
 
     if platform.startswith('linux'):
         with Pool(cpu_count()//2) as p:
-            for result in tqdm(p.imap(red, input), desc = "Merging", total = len(input)):
+            for result in tqdm(p.imap(red, input, 128), desc = "Merging", total = len(input)):
                 out.append(result)
     else:
         print("Multithreading is broken in windows! Please help troubleshoot!")
         for result in tqdm(map(red, input), desc = "Merging", total = len(input)):
             out.append(result)
-  
+
+
     return out
 
 specrot02 = reduceMulti(specrot)
-specrot22 = reduceMulti(specrot2)
-print()
 
 large = 0
+
 for column in specrot02:
     if max(column.values()) > large:
         large = max(column.values())
-for column in specrot22:
-    if max(column.values()) > large:
-        large = max(column.values())
+
+if not mono:
+    specrot22 = reduceMulti(specrot2)
+
+    for column in specrot22:
+        if max(column.values()) > large:
+            large = max(column.values())
+print()
+
+
+
+
 
 length = len(specrot02)
 
@@ -148,12 +156,25 @@ def interpolate2(list, length):
             olditem = item
     return tempspec
 
-#specrot02 = interpolate2(specrot02, length)
-#specrot22 = interpolate2(specrot22, length)
+if do_interpolation:
+    specrot02 = interpolate2(specrot02, length)
+    if not mono:
+        specrot22 = interpolate2(specrot22, length)
 print()
 
 length = len(specrot02)
 timer, wait = 0, 0
+
+midi = mido.MidiFile(type = 1)
+
+midi.ticks_per_beat = 5000
+
+for i in range(channels):
+    midi.tracks.append(mido.MidiTrack())
+
+if not mono:
+    midi.tracks[0].append(mido.Message('control_change', channel = 0, control = 10, value = 0))
+    midi.tracks[0].append(mido.Message('control_change', channel = 1, control = 10, value = 127))
 
 for column in tqdm(range(length), desc = "Writing midi"):
     wait = int(t[column]*10000 - timer)
@@ -166,17 +187,18 @@ for column in tqdm(range(length), desc = "Writing midi"):
         midi.tracks[0].append(mido.Message('note_on', channel = 0, note=int(note), velocity=vel))
         note_list.append([note, 0, 0])
         notenum += 1
-
-    notenum = 0
-    for note,value in specrot22[column].items():
-        vel = int((value/large)*127)
-        if vel<=1: continue #vel=0
-        track = int(vel/(96/channels) + 1) #int(vel/16+1)
-        #track = int(log2(vel/5+1))
-        if track > channels-1: track = channels-1 # if track > 5: track = 5
-        midi.tracks[track].append(mido.Message('note_on', channel = 1, note=int(note), velocity=vel))
-        note_list.append([note, track, 1])
-        notenum += 1
+        
+    if not mono:
+        notenum = 0
+        for note,value in specrot22[column].items():
+            vel = int((value/large)*127)
+            if vel<=1: continue #vel=0
+            track = int(vel/(96/channels) + 1) #int(vel/16+1)
+            #track = int(log2(vel/5+1))
+            if track > channels-1: track = channels-1 # if track > 5: track = 5
+            midi.tracks[track].append(mido.Message('note_on', channel = 1, note=int(note), velocity=vel))
+            note_list.append([note, track, 1])
+            notenum += 1
 
     for track in midi.tracks:
         track.append(mido.Message('note_off', channel = note_list[0][2], note=note_list[0][0], time = wait))
