@@ -69,18 +69,7 @@ else:
 data2 = data[:,1]
 data = data[:,0]
 
-f, t, spectro = spectrogram(data, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
-specrot = flipud(rot90(spectro))
-if not mono:
-    _,_, spectro2 = spectrogram(data2, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
-    specrot2 = flipud(rot90(spectro2))
-length = len(specrot)
-
 keyFreq = {}
-for freq in f:
-    if freq == 0: continue
-    keyFreq[int(freq)]=round(12 * log2(freq / 440) + 69)
-
 def getkey(freq):
     if freq <= 0: return 0
     return keyFreq[int(freq)]
@@ -109,39 +98,11 @@ def red(column2):
 def reduceMulti(input):
     out = []
 
-    if platform.startswith('linux'):
-        with Pool(cpu_count()//2) as p:
-            for result in tqdm(p.imap(red, input, 128), desc = "Merging", total = len(input)):
-                out.append(result)
-    else:
-        print("Multithreading is broken in windows! Please help troubleshoot!")
-        for result in tqdm(map(red, input), desc = "Merging", total = len(input)):
+    with Pool(cpu_count()//2) as p:
+        for result in tqdm(p.imap(red, input, 128), desc = "Merging", total = len(input)):
             out.append(result)
 
-
     return out
-
-specrot02 = reduceMulti(specrot)
-
-large = 0
-
-for column in specrot02:
-    if max(column.values()) > large:
-        large = max(column.values())
-
-if not mono:
-    specrot22 = reduceMulti(specrot2)
-
-    for column in specrot22:
-        if max(column.values()) > large:
-            large = max(column.values())
-print()
-
-
-
-
-
-length = len(specrot02)
 
 def interpolate2(list, length):
     tempspec = []
@@ -156,64 +117,98 @@ def interpolate2(list, length):
             olditem = item
     return tempspec
 
-if do_interpolation:
-    specrot02 = interpolate2(specrot02, length)
+if __name__ == "__main__":
+    f, t, spectro = spectrogram(data, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
+    specrot = flipud(rot90(spectro))
     if not mono:
-        specrot22 = interpolate2(specrot22, length)
-print()
+        _,_, spectro2 = spectrogram(data2, samplerate, window=get_window("hann", res), nperseg=res, noverlap=round(res*overlap), mode='psd')
+        specrot2 = flipud(rot90(spectro2))
 
-length = len(specrot02)
-timer, wait = 0, 0
+    for freq in f:
+        if freq == 0: continue
+        keyFreq[int(freq)]=round(12 * log2(freq / 440) + 69)
 
-midi = mido.MidiFile(type = 1)
+    length = len(specrot)
 
-midi.ticks_per_beat = 5000
+    specrot02 = reduceMulti(specrot)
 
-for i in range(channels):
-    midi.tracks.append(mido.MidiTrack())
+    large = 0
+    for column in specrot02:
+        if max(column.values()) > large:
+            large = max(column.values())
 
-if not mono:
-    midi.tracks[0].append(mido.Message('control_change', channel = 0, control = 10, value = 0))
-    midi.tracks[0].append(mido.Message('control_change', channel = 1, control = 10, value = 127))
-
-for column in tqdm(range(length), desc = "Writing midi"):
-    wait = int(t[column]*10000 - timer)
-    timer += wait
-    note_list = [[0,0,0]]
-    notenum = 0
     if not mono:
+        specrot22 = reduceMulti(specrot2)
+
+        for column in specrot22:
+            if max(column.values()) > large:
+                large = max(column.values())
+    print()
+
+    length = len(specrot02)
+
+    if do_interpolation:
+        specrot02 = interpolate2(specrot02, length)
+        if not mono:
+            specrot22 = interpolate2(specrot22, length)
+    print()
+
+    length = len(specrot02)
+    timer, wait = 0, 0
+
+    midi = mido.MidiFile(type = 1)
+
+    midi.ticks_per_beat = 5000
+
+    for i in range(channels):
+        midi.tracks.append(mido.MidiTrack())
+
+    if not mono:
+        midi.tracks[0].append(mido.Message('control_change', channel = 0, control = 10, value = 0))
+        midi.tracks[0].append(mido.Message('control_change', channel = 1, control = 10, value = 127))
+
+    for column in tqdm(range(length), desc = "Writing midi"):
+        wait = int(t[column]*10000 - timer)
+        timer += wait
+
+        note_list = [[0,0,0]]
         notenum = 0
-        for note,value in specrot22[column].items():
 
+        if not mono:
+            notenum = 0
+            for note,value in specrot22[column].items():
+
+                vel = int((value/large)*127)
+                if vel<=1: continue
+
+                midi.tracks[0].append(mido.Message('note_on', channel = 1, note=int(note), velocity=vel))
+
+                note_list.append([note, 0, 1])
+
+                notenum += 1
+
+        for note,value in specrot02[column].items():
+            
             vel = int((value/large)*127)
             if vel<=1: continue
 
-            midi.tracks[0].append(mido.Message('note_on', channel = 1, note=int(note), velocity=vel))
+            track = int(vel/(96/channels) + 1)
+            if track > channels-1: track = channels-1
 
-            note_list.append([note, 0, 1])
+            midi.tracks[track].append(mido.Message('note_on', channel = 0, note=int(note), velocity=vel))
+
+            note_list.append([note, track, 0])
 
             notenum += 1
 
-    for note,value in specrot02[column].items():
-        
-        vel = int((value/large)*127)
-        if vel<=1: continue
+        for track in midi.tracks:
+            track.append(mido.Message('note_off', channel = note_list[0][2], note=note_list[0][0], time = wait))
 
-        track = int(vel/(96/channels) + 1)
-        if track > channels-1: track = channels-1
+        note_list = note_list[1:]
 
-        midi.tracks[track].append(mido.Message('note_on', channel = 0, note=int(note), velocity=vel))
+        for play in note_list:
+            midi.tracks[play[1]].append(mido.Message('note_off', channel = play[2], note=play[0]))
 
-        note_list.append([note, track, 0])
-
-        notenum += 1
-
-    for track in midi.tracks:
-        track.append(mido.Message('note_off', channel = note_list[0][2], note=note_list[0][0], time = wait))
-    note_list = note_list[1:]
-    for play in note_list:
-        midi.tracks[play[1]].append(mido.Message('note_off', channel = play[2], note=play[0]))
-
-print("\n\nExporting")
-midi.save(file_name + ".mid")
-print("\n\nDone!")
+    print("\n\nExporting")
+    midi.save(file_name + ".mid")
+    print("\n\nDone!")
