@@ -1,5 +1,7 @@
 # another-wav-to-midi
 
+#### prefer https://github.com/Basiliotornado/Dynamic-Midi-Converter
+
 Welcome to my program :)
 ```
 Flags: 
